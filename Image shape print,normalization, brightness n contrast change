@@ -1,51 +1,132 @@
 import numpy as np
-from skimage import io,color,exposure, transform, img_as_float # io = input/output,
+from skimage import io,color,exposure, transform, img_as_float 
 import matplotlib.pyplot as plt # plotting image 
 
+# io = For reading and writing images, 
+# color: For converting images between color spaces (e.g., RGB to grayscale), 
+# exposure: For adjusting image contrast and brightness (e.g., histogram equalization), 
+# transform: For geometric transformations like resizing, rotating, and warping
+# img_as_float: For converting images to floating-point representation (values in [0, 1])
+-------------------------------------------------------------------------------------------------------------------------------------------------
 #Image Shape
-I = io.imread("/content/sky.jpg") #creating object, imread read the path
-height, width, nchannels = I.shape #
+I = io.imread("/content/sky.jpg") #reads the image from the specified file path, The image is loaded into a NumPy array named I
+
+# I contains A 3D NumPy array with shape (height, width, nchannels) where
+# height = number of rows (pixels tall), width = number of columns (pixels wide), nchannels = number of color channels (usually 3 for RGB).   
+
+height, width, nchannels = I.shape # Unpacks the shape of the image array into three variables
 print(height)
 print(width)
 print(nchannels)
+------------------------------------------------------------------------------------------------------------------------------------------------------
+#Image Normalization explanation
 
-#Image Normalization
+When you normalize an image, you're changing the data type and value range, not the appearance of the image (visually, it's nearly the same).
+
+✅ Before vs After Normalization
+
+Aspect	                      Before Normalization	            After Normalization
+Data Type	                      uint8 (integers)	               float32 (decimal values)
+Pixel Value                     Range	0 to 255	                   0.0 to 1.0
+Visual Appearance	               Brightness/contrast the same	     Visually unchanged*
+Memory Usage	                    Less	Slightly                  more (float uses more memory)
+
+*The image may look slightly different when displayed, depending on how the plotting function scales float values, especially if you're viewing grayscale images.
+
+💡 Why Normalize If It Looks the Same?
+Machine Learning Compatibility: Most models (especially deep learning models like CNNs) expect inputs in the range [0, 1] or [-1, 1].
+
+Faster Convergence: Gradient-based optimizers (like Adam, SGD) work more efficiently when input values are small and consistent in scale.
+
+Reduced Numerical Instability: Prevents issues like overflow or underflow during mathematical operations.
+
+I = I.astype("float32")  # preparing for float value. declaring I object type as float
+
+What it does: Converts the image data type from integers (typically uint8, where pixel values range from 0–255) to 32-bit floating point (float32).
+
+Why it's done: So that we can perform decimal operations, like dividing by 255. Integer types would round off the result or cause errors.
+
+
+I = I / 255.0
+What it does: Divides all pixel values by 255 to scale them from the range [0, 255] → [0.0, 1.0].
+
+Why it's done: This is the actual normalization step. Many algorithms (e.g., neural networks) perform better with input values between 0 and 1.
+
+plt.imshow(I, cmap="gray")
+What it does: Displays the normalized image using matplotlib.
+
+cmap="gray" tells imshow to render the image in grayscale — useful if the image is single-channel or if you want to visualize intensity.
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#Image Normalization code
 I = I.astype("float32") #preparing for float value. declaring I object type as float
 I =I/255.0
-plt.imshow(I,cmap = "gray")
+plt.imshow(I,cmap = "gray") # why gray? its not becoming gray. output colorful
 plt.axis("off")
 plt.show()
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+🧠 What is np.clip() in NumPy?
 
+np.clip(array, min_value, max_value)
+It limits (or "clips") the values in an array to a specific range.
+Any value less than min_value becomes min_value.
+Any value greater than max_value becomes max_value.
+
+i_contrastlow = np.clip(I / 0.5, 0, 1)
+Let’s analyze this:
+I / 0.5:
+This brightens the normalized image.
+Since I is in range [0.0, 1.0], dividing by 0.5 gives values in [0.0, 2.0].
+Values > 1 become over-brightened, possibly exceeding the allowed range for display.
+np.clip(..., 0, 1):
+Clamps the result so all values are within [0, 1].
+Any pixel brighter than white (i.e., >1.0) becomes pure white.
+This makes high intensities flat, reducing contrast — hence the name i_contrastlow.
+
+📊 Example:
+Let's say you have some pixel values like:
+
+[0.2, 0.5, 0.8, 1.2, 1.8]
+After clipping:
+np.clip([0.2, 0.5, 0.8, 1.2, 1.8], 0, 1) → [0.2, 0.5, 0.8, 1.0, 1.0]
+See how 1.2 and 1.8 are "cut off" at 1.0?
+
+🔦 Visual Effect
+Before clipping: Overly bright pixels go beyond 1.0 (invalid for display).
+
+After clipping: Those pixels become flat white → the image loses detail in bright areas → lower contrast.
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------
 #brightness increased
 i_bright = np.clip(I+0.5, 0,1) #normalized I is brighten up 0.5 within 0 to 1 range 
 plt.imshow(i_bright,cmap = "gray")
 plt.axis("off")
 plt.show()
-
+--------------------------------------------------------------------------------------------------------------------------------------------------------
 #brightness decreased
 i_dark = np.clip(I-0.5, 0,1) #normalized I is brighten up 0.5 within 0 to 1 range 
 plt.imshow(i_dark,cmap = "gray")
 plt.axis("off")
 plt.show()
-
+---------------------------------------------------------------------------------------------------------------------------------------------------------
 #contrast increased
 i_contrast = np.clip(I*0.5, 0,1) #normalized I is brighten up 0.5 within 0 to 1 range 
 plt.imshow(i_contrast,cmap = "gray")
 plt.axis("off")
 plt.show()
-
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
 #contrast decresed
 i_contrastlow = np.clip(I/0.5, 0,1) #normalized I is brighten up 0.5 within 0 to 1 range 
 plt.imshow(i_contrastlow,cmap = "gray")
 plt.axis("off")
 plt.show()
-
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
 #color to grayscale
 I_gray = color.rgb2gray(I)
 plt.imshow(I_gray,cmap = "gray")
 plt.axis("on")
 plt.show()
-
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
 #negative film
 I_neg = 1 - I_gray
 
